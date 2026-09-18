@@ -1,0 +1,74 @@
+[
+  {
+    "servico": "Corte degradê",
+    "categoria": "cabelo",
+    "duracaoMin": 45,
+    "preco": 50,
+    "profissionais": ["Rafa", "Diego", "Thiago"],
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "servico": "Corte social",
+    "categoria": "cabelo",
+    "duracaoMin": 30,
+    "preco": 40,
+    "profissionais": ["Rafa", "Diego", "Thiago"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Barba",
+    "categoria": "barba",
+    "duracaoMin": 30,
+    "preco": 35,
+    "profissionais": ["Rafa", "Diego"],
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "servico": "Combo corte e barba",
+    "categoria": "combo",
+    "duracaoMin": 75,
+    "preco": 75,
+    "profissionais": ["Rafa", "Diego"],
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "servico": "Pezinho",
+    "categoria": "acabamento",
+    "duracaoMin": 15,
+    "preco": 15,
+    "profissionais": ["Rafa", "Diego", "Thiago"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Sobrancelha",
+    "categoria": "acabamento",
+    "duracaoMin": 15,
+    "preco": 15,
+    "profissionais": ["Diego", "Thiago"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Pigmentação de barba",
+    "categoria": "barba",
+    "duracaoMin": 40,
+    "preco": 45,
+    "profissionais": ["Rafa"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Luzes / platinado",
+    "categoria": "quimica",
+    "duracaoMin": 120,
+    "preco": 150,
+    "profissionais": ["Thiago"],
+    "disponivel": true,
+    "destaque": false
+  }
+]
