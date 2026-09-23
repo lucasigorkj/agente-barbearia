@@ -1,0 +1,354 @@
+# Agente de pré-atendimento no WhatsApp — Barbearia
+
+Um agente de IA que atende clientes no WhatsApp 24/7: responde, consulta a tabela de serviços,
+conduz até um dia e horário e passa o lead pronto para o barbeiro confirmar. Quando um humano
+assume a conversa, o agente **para de responder**.
+
+Construído do zero, ao vivo, com Claude Code e a skill [`agente-whatsapp`](skills/agente-whatsapp/),
+que também está neste repositório.
+
+▶️ **Vídeo com o passo a passo completo:** https://www.youtube.com/watch?v=o-MKf8A4EgI
+
+```
+cliente> Bora, queria para sábado
+agente > Fechou. Prefere só cabelo, barba ou combo?
+cliente> Manda o combo
+agente > O combo corte e barba sai R$ 75. Sábado você prefere de manhã ou à tarde?
+```
+
+---
+
+## O que tem aqui
+
+| Pasta | O que é |
+|---|---|
+| [`src/`](src/) | o agente da barbearia, pronto para rodar |
+| [`skills/agente-whatsapp/`](skills/agente-whatsapp/) | a skill do Claude Code que gerou o agente. Serve para criar um agente para **qualquer nicho** (clínica, revenda, imobiliária, academia...) |
+
+Você pode seguir dois caminhos:
+
+- **[Caminho A](#caminho-a--criar-o-seu-agente-com-a-skill)**: instalar a skill e criar o seu
+  próprio agente, para o nicho que quiser. É o que o vídeo mostra.
+- **[Caminho B](#caminho-b--rodar-este-agente-da-barbearia)**: rodar direto este agente de
+  barbearia e adaptar.
+
+Os dois terminam no mesmo lugar: [colocar no WhatsApp](#colocar-no-whatsapp).
+
+### O que o agente faz
+
+- Responde no WhatsApp em tom informal ("Fala, tudo certo?")
+- **Junta mensagens picadas** ("oi" / "vi no insta" / "quanto tá?") e responde uma vez só
+- Consulta o catálogo (`src/data/catalogo.json`) para preço, duração e barbeiro — nunca inventa
+- Conduz o cliente, uma pergunta por vez: serviço → dia/horário → barbeiro → nome
+- Registra o lead e envia para o WhatsApp do barbeiro (e, se quiser, para um CRM via webhook)
+- **Sai da frente** quando o lead é registrado ou quando alguém da equipe digita na conversa
+- Mostra "digitando..." e marca como lida, como uma pessoa faria
+
+### O que ele **não** faz (ainda)
+
+É uma **demo funcional**: roda de verdade e você abre na frente do cliente. Mas:
+
+- **Não vê a agenda.** Ele propõe o horário; o barbeiro confirma.
+- **Não tem banco de dados.** Conversas, pausas e leads ficam em memória. Reiniciou o servidor,
+  zerou.
+- **Não faz cobrança.**
+
+O que falta para virar produto está em
+[`skills/agente-whatsapp/references/demo-vs-producao.md`](skills/agente-whatsapp/references/demo-vs-producao.md).
+
+---
+
+## Pré-requisitos
+
+- [Node.js 20+](https://nodejs.org/)
+- [Claude Code](https://claude.com/claude-code) (só para o caminho A). No vídeo, usei a extensão
+  *Claude Code for VS Code* dentro do Antigravity IDE; qualquer editor compatível com VS Code serve.
+- Chave da API do Gemini, que tem tier grátis: [Google AI Studio](https://aistudio.google.com/apikey)
+- Para o WhatsApp: conta na [UAZAPI](https://uazapi.com/) (tem instância grátis para teste) e na
+  [Railway](https://railway.com/) (deploy)
+
+---
+
+## Caminho A — Criar o seu agente com a skill
+
+### 1. Instale a skill
+
+Copie a pasta da skill para as skills do Claude Code:
+
+```bash
+git clone https://github.com/gfrabelo/agente-barbearia.git
+cp -r agente-barbearia/skills/agente-whatsapp ~/.claude/skills/
+```
+
+No Windows (PowerShell):
+
+```powershell
+git clone https://github.com/gfrabelo/agente-barbearia.git
+Copy-Item -Recurse agente-barbearia\skills\agente-whatsapp "$env:USERPROFILE\.claude\skills\"
+```
+
+### 2. Peça o agente
+
+Abra uma **pasta vazia** no editor, abra o Claude Code, mude para o modo **Plan** e digite:
+
+```
+quero criar um agente para uma barbearia, use a skill /agente-whatsapp
+```
+
+Troque "barbearia" pelo seu nicho.
+
+### 3. Responda às quatro perguntas
+
+| Pergunta | O que escolhi no vídeo |
+|---|---|
+| O que o agente precisa conseguir antes de te passar a conversa? | Marcar o horário |
+| Como o agente fala com o cliente? | Descontraído / informal |
+| De onde vem o preço? | Lista com preço fixo (`catalogo.json`) |
+| O que você precisa saber do cliente? | Nome, serviço, dia/horário, barbeiro de preferência |
+
+### 4. Leia o plano e aprove
+
+Leia o plano com atenção, principalmente o que o agente **não** vai fazer. Aprove e mude para o
+modo Auto (`Shift + Tab`). O Claude Code copia a base e escreve os três arquivos do seu negócio:
+
+```
+src/data/catalogo.json   os serviços, preços e duração
+src/tools.ts             busca no catálogo e registro do lead
+src/prompt.ts            o system prompt: tom de voz, exemplos, regras
+```
+
+Continue a partir do [passo 2 do caminho B](#2-configure-o-env).
+
+---
+
+## Caminho B — Rodar este agente da barbearia
+
+### 1. Clone e instale
+
+```bash
+git clone https://github.com/gfrabelo/agente-barbearia.git
+cd agente-barbearia
+npm install
+```
+
+### 2. Configure o `.env`
+
+```bash
+cp .env.example .env
+```
+
+Abra o `.env` e preencha o mínimo:
+
+```env
+GEMINI_API_KEY=cole-sua-chave-aqui
+EMPRESA_NOME=Barbearia Navalha
+EMPRESA_CIDADE=São Paulo
+ATENDENTE_NOME=Léo
+TIMEZONE=America/Sao_Paulo
+```
+
+Para pegar a chave: [Google AI Studio](https://aistudio.google.com/apikey) → *Criar chave de API*
+→ copie.
+
+> `EMPRESA_ENDERECO` e `EMPRESA_HORARIO` são opcionais **de propósito**. Vazios, o agente não
+> inventa. Preenchidos errado, ele manda o cliente para a porta fechada.
+
+### 3. Valide o setup
+
+```bash
+npm run check
+```
+
+Confere se a chave funciona, se o modelo existe e se ele chama as ferramentas. Tem que terminar com
+`Tudo certo. Pode subir.`
+
+### 4. Converse no terminal
+
+```bash
+npm run repl
+```
+
+Converse com o agente sem WhatsApp nenhum. É aqui que você ajusta tom e fluxo: é rápido e não
+depende de nada conectado. `/novo` zera a conversa, `/sair` encerra.
+
+Para mudar os serviços, edite [`src/data/catalogo.json`](src/data/catalogo.json). Para mudar o
+jeito de falar, edite [`src/prompt.ts`](src/prompt.ts).
+
+---
+
+## Colocar no WhatsApp
+
+### 1. Suba o código para o GitHub
+
+Crie um repositório (pode ser privado) e envie o projeto. O `.env` **não sobe**, pois está no
+`.gitignore`. Suas chaves ficam só na sua máquina e na Railway.
+
+```bash
+git init
+git add .
+git commit -m "agente de pre-atendimento"
+git branch -M main
+git remote add origin https://github.com/SEU-USUARIO/SEU-REPO.git
+git push -u origin main
+```
+
+### 2. Conecte o WhatsApp na UAZAPI
+
+1. Crie a conta e inicie uma instância (a grátis serve para teste).
+2. Copie a **Server URL** e o **Instance Token**.
+3. Clique em **Conectar** e escaneie o QR Code com o WhatsApp que o agente vai usar.
+
+> Use um número de teste ou o número do negócio, **não o seu pessoal**. O agente responde a
+> qualquer pessoa que mandar mensagem para esse número.
+
+### 3. Faça o deploy na Railway
+
+1. Em [railway.com](https://railway.com/): **New Project → Deploy from GitHub repo** → escolha o
+   seu repositório.
+2. Aba **Variables → Raw Editor**, cole as variáveis:
+
+   ```env
+   GEMINI_API_KEY=...
+   EMPRESA_NOME=Barbearia Navalha
+   EMPRESA_CIDADE=São Paulo
+   ATENDENTE_NOME=Léo
+   TIMEZONE=America/Sao_Paulo
+   UAZAPI_URL=https://sua-instancia.uazapi.com
+   UAZAPI_TOKEN=...
+   HUMANO_WHATSAPP=5511999998888
+   WEBHOOK_SECRET=um-valor-aleatorio-e-longo
+   ```
+
+   - `HUMANO_WHATSAPP`: número de quem recebe o lead pronto, com 55 + DDD, só dígitos.
+   - `WEBHOOK_SECRET`: gere com `openssl rand -hex 24` ou qualquer gerador de senha. Veja
+     [Segurança](#segurança).
+   - **Não cole `PORT`.** A Railway define a porta sozinha.
+
+3. **Settings → Networking → Generate Domain**, na porta que a Railway sugerir (no vídeo, `8080`).
+4. Teste no navegador: `https://sua-url.up.railway.app/health` tem que responder `{"ok": true, ...}`.
+
+### 4. Configure o webhook
+
+De volta na UAZAPI, na instância conectada:
+
+1. **Configurar Webhook → Criar Webhook**
+2. URL: a URL da Railway + `/webhook` + o segredo:
+
+   ```
+   https://sua-url.up.railway.app/webhook?secret=o-mesmo-valor-do-WEBHOOK_SECRET
+   ```
+
+3. Eventos: marque `messages`.
+4. Habilite e clique em **Salvar**.
+
+### 5. Teste
+
+Mande uma mensagem para o número conectado, de **outro** celular. Experimente mandar picado
+("caraca kk", "po", "queria corte e bigode"): o agente espera, junta tudo e responde uma vez.
+
+Quando o lead for registrado, ele chega no `HUMANO_WHATSAPP` e o agente fica em silêncio naquela
+conversa por 2 horas.
+
+---
+
+## Segurança
+
+- **Nunca commite o `.env`.** Ele já está no `.gitignore`. Se uma chave vazar, revogue no AI
+  Studio / UAZAPI e gere outra.
+- **Preencha o `WEBHOOK_SECRET`.** Sem ele, qualquer pessoa que descubra a URL do seu webhook
+  consegue forjar mensagens e fazer o **seu** WhatsApp responder para qualquer número, gastando
+  a sua API e arriscando o banimento do número. Com ele, requisições sem o segredo correto
+  levam `401`. Se estiver vazio, o servidor avisa no log ao subir.
+- **Uma réplica só.** O estado (conversas, pausas) mora na memória do processo. Não escale para
+  duas instâncias na Railway.
+
+---
+
+## Arquitetura
+
+A regra que divide o projeto: **tem resposta certa? É código. Precisa de interpretação? É o
+modelo.**
+
+| Código | Modelo (Gemini) |
+|---|---|
+| preço e catálogo | texto da resposta |
+| que dia é hoje e os próximos 7 dias | ritmo da qualificação |
+| se um humano já assumiu | gíria e contexto ("sexta que vem", "vlw") |
+| juntar mensagens picadas | se o cliente aceitou ou desconversou |
+| formatar dinheiro (`R$ 75`, nunca `75.00`) | |
+
+Stack: Node 20 + TypeScript + Express + Gemini (function calling) + UAZAPI. Três dependências de
+produção, sem banco e sem framework de agente.
+
+```
+src/
+├── data/catalogo.json   ← do negócio: serviços e preços
+├── tools.ts             ← do negócio: busca, listagem, registro do lead
+├── prompt.ts            ← do negócio: system prompt
+├── index.ts             servidor, webhook, agrupamento de mensagens, fila por conversa
+├── agent.ts             loop de conversa com o Gemini e histórico
+├── whatsapp.ts          envio pela UAZAPI + "digitando..." e lida
+├── pausa.ts             silencia o agente quando um humano assume
+├── notificar.ts         entrega o lead (WhatsApp e webhook)
+├── datas.ts             bloco de data/fuso do prompt
+├── catalogo.ts          busca fuzzy e formatação de dinheiro
+├── config.ts            lê o .env
+├── tool-runner.ts       executa as tools com rede de proteção
+├── check.ts             npm run check
+└── repl.ts              npm run repl
+```
+
+Para trocar de barbearia, mude o `.env` e o `catalogo.json`. Para trocar de **nicho**, reescreva só
+os três arquivos marcados com ←; o resto não muda. A skill faz isso por você.
+
+## Comandos
+
+| Comando | O que faz |
+|---|---|
+| `npm run repl` | conversa com o agente no terminal (só precisa da `GEMINI_API_KEY`) |
+| `npm run check` | valida chave, modelo e function calling |
+| `npm run dev` | servidor local com reload |
+| `npm run build` / `npm start` | compila e roda em produção (a Railway faz isso sozinha) |
+
+## Variáveis de ambiente
+
+Todas estão comentadas em [`.env.example`](.env.example). As principais:
+
+| Variável | Obrigatória | Para quê |
+|---|---|---|
+| `GEMINI_API_KEY` | sim | chave do Gemini |
+| `EMPRESA_NOME`, `EMPRESA_CIDADE`, `ATENDENTE_NOME` | não | identidade do agente |
+| `TIMEZONE` | não | fuso do negócio (padrão `America/Sao_Paulo`) |
+| `UAZAPI_URL`, `UAZAPI_TOKEN` | para o servidor | conexão com o WhatsApp |
+| `WEBHOOK_SECRET` | recomendada | protege o `/webhook` |
+| `HUMANO_WHATSAPP` | não | quem recebe o lead pronto |
+| `LEAD_WEBHOOK_URL` | não | envia o lead em JSON para n8n, Make, Zapier ou um CRM |
+| `GEMINI_MODEL` | não | modelo (padrão `gemini-3.5-flash-lite`) |
+| `DEBOUNCE_MS` | não | tempo de espera para juntar mensagens (padrão 6 s) |
+
+> Com `HUMANO_WHATSAPP` e `LEAD_WEBHOOK_URL` vazios, o lead só aparece **no log** da Railway.
+
+## Problemas comuns
+
+| Sintoma | Causa provável |
+|---|---|
+| `npm run check` falha no model id | o Google aposentou o modelo. O check lista os disponíveis; troque `GEMINI_MODEL` |
+| `/health` não abre | domínio gerado na porta errada na Railway, ou `PORT` colado nas variáveis |
+| WhatsApp não responde | webhook sem `/webhook`, sem `https://`, evento `messages` desmarcado ou `secret` diferente do `WEBHOOK_SECRET` (veja o `401` no log da UAZAPI) |
+| Agente ficou mudo numa conversa | é a pausa: o lead foi registrado ou alguém digitou manualmente. Volta sozinho depois de `PAUSA_APOS_LEAD_MIN` / `PAUSA_HUMANO_MIN` |
+| Agente erra o dia da semana | `TIMEZONE` não configurado |
+| Mandei do próprio número conectado e nada | mensagens do próprio número são tratadas como "humano assumiu". Teste de outro celular |
+
+## Próximos passos para produção
+
+1. Banco de dados para pausas, leads e histórico, que sobreviva a um deploy
+2. Integração com CRM ou agenda real (o `LEAD_WEBHOOK_URL` já é a porta de entrada)
+3. Dashboard de leads
+4. Rate limit por número no webhook
+
+O caminho de cada um está em
+[`demo-vs-producao.md`](skills/agente-whatsapp/references/demo-vs-producao.md).
+
+## Licença
+
+[MIT](LICENSE). Use, adapte e venda para os seus clientes à vontade.

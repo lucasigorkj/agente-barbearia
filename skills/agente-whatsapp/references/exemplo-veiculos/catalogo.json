@@ -1,0 +1,110 @@
+[
+  {
+    "tipo": "carro",
+    "marca": "Porsche",
+    "modelo": "Macan",
+    "versao": "T 2.0 Turbo PDK",
+    "ano": 2026,
+    "km": 2490,
+    "cambio": "automatico",
+    "preco": 569900,
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "tipo": "carro",
+    "marca": "Land Rover",
+    "modelo": "Range Rover Velar",
+    "versao": "R-Dynamic HSE 3.0 4x4 V6 Aut.",
+    "ano": 2018,
+    "km": 84000,
+    "cambio": "automatico",
+    "preco": 298900,
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "tipo": "carro",
+    "marca": "Volvo",
+    "modelo": "XC90",
+    "versao": "Momentum 2.0 AWD T6 Aut.",
+    "ano": 2019,
+    "km": 68000,
+    "cambio": "automatico",
+    "preco": 249900,
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "tipo": "carro",
+    "marca": "Fiat",
+    "modelo": "Argo",
+    "versao": "Drive 1.0 Flex",
+    "ano": 2026,
+    "km": 0,
+    "cambio": "manual",
+    "preco": 86900,
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "tipo": "carro",
+    "marca": "Chevrolet",
+    "modelo": "Onix",
+    "versao": "Hatch LT 1.0 12V TB Flex Mec.",
+    "ano": 2025,
+    "km": 48000,
+    "cambio": "manual",
+    "preco": 83900,
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "tipo": "carro",
+    "marca": "Hyundai",
+    "modelo": "HB20",
+    "versao": "Platinum 1.0 TB Flex 12V Aut.",
+    "ano": 2022,
+    "km": 67000,
+    "cambio": "automatico",
+    "preco": 79900,
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "tipo": "carro",
+    "marca": "Volkswagen",
+    "modelo": "Golf",
+    "versao": "Highline 1.4 TSI 140cv Aut.",
+    "ano": 2014,
+    "km": 149000,
+    "cambio": "automatico",
+    "preco": 72900,
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "tipo": "carro",
+    "marca": "Fiat",
+    "modelo": "Argo",
+    "versao": "1.0 6V Flex",
+    "ano": 2023,
+    "km": 38000,
+    "cambio": "manual",
+    "preco": 63900,
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "tipo": "carro",
+    "marca": "Ford",
+    "modelo": "EcoSport",
+    "versao": "Freestyle 1.6 16V Flex",
+    "ano": 2013,
+    "km": 98000,
+    "cambio": "manual",
+    "preco": 45900,
+    "disponivel": true,
+    "destaque": false
+  }
+]

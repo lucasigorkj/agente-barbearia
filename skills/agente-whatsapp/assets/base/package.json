@@ -1,8 +1,7 @@
 {
-  "name": "agente-barbearia",
+  "name": "agente-whatsapp",
   "version": "1.0.0",
   "private": true,
-  "license": "MIT",
   "description": "Agente de pre-atendimento no WhatsApp",
   "main": "dist/index.js",
   "engines": {
