@@ -1,5 +1,7 @@
 import {
+  FinishReason,
   GoogleGenAI,
+  ThinkingLevel,
   type Content,
   type GenerateContentParameters,
   type GenerateContentResponse,
@@ -164,8 +166,18 @@ async function gerar(
     for (const espera of esperas) {
       if (espera) await new Promise((r) => setTimeout(r, espera));
       try {
-        const resposta = await ai.models.generateContent({ ...params, model });
+        // CICATRIZ: o reserva gemini-3.5-flash pensa por padrao e o raciocinio
+        // conta no maxOutputTokens -- gastou 383 de 400 e o cliente recebeu
+        // "Aqui é o Lucas, da Barbearia" cortado. Atendimento nao precisa pensar.
+        const resposta = await ai.models.generateContent({
+          ...params,
+          model,
+          config: { ...params.config, thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } },
+        });
         foraAte.delete(model);
+        if (resposta.candidates?.[0]?.finishReason === FinishReason.MAX_TOKENS) {
+          console.warn(`[agent] ${model} bateu maxOutputTokens: resposta pode ter saido cortada`);
+        }
         return resposta;
       } catch (e) {
         if (!transitorio(e)) throw e;
