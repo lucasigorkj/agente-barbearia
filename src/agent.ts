@@ -123,11 +123,11 @@ export function desfazerTurno(chatid: string, marcador: number): void {
 // Chamada ao Gemini com retry + modelo reserva
 // ---------------------------------------------------------------------------
 
-/** 503 (modelo sobrecarregado), 429 (cota), 500 e timeout: costumam passar em segundos. */
+/** 503 (sobrecarga), 504 (prazo do Google), 429 (cota), 500 e timeout: costumam passar em segundos. */
 function transitorio(e: unknown): boolean {
   if ((e as { name?: unknown })?.name === "AbortError") return true;
   const status = (e as { status?: unknown })?.status;
-  return status === 503 || status === 429 || status === 500;
+  return status === 503 || status === 504 || status === 429 || status === 500;
 }
 
 function motivo(e: unknown): string {

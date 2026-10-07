@@ -1,73 +1,106 @@
 [
   {
-    "servico": "Corte degradê",
+    "servico": "Corte masculino (moderno ou clássico)",
     "categoria": "cabelo",
-    "duracaoMin": 45,
-    "preco": 50,
-    "profissionais": ["Rafa", "Diego", "Thiago"],
+    "busca": "degrade degradê social classico moderno americano navalhado",
+    "preco": 45,
+    "profissionais": ["Lucas", "Jason"],
     "disponivel": true,
     "destaque": true
   },
   {
-    "servico": "Corte social",
+    "servico": "Nudred's (corte afro)",
     "categoria": "cabelo",
-    "duracaoMin": 30,
-    "preco": 40,
-    "profissionais": ["Rafa", "Diego", "Thiago"],
+    "busca": "nudred nudreds afro crespo twist dread",
+    "preco": 45,
+    "profissionais": ["Lucas", "Jason"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Corte infantil (#Kids)",
+    "categoria": "cabelo",
+    "busca": "kids crianca infantil filho menino",
+    "preco": 45,
+    "profissionais": ["Lucas", "Jason"],
     "disponivel": true,
     "destaque": false
   },
   {
     "servico": "Barba",
     "categoria": "barba",
-    "duracaoMin": 30,
-    "preco": 35,
-    "profissionais": ["Rafa", "Diego"],
-    "disponivel": true,
-    "destaque": true
-  },
-  {
-    "servico": "Combo corte e barba",
-    "categoria": "combo",
-    "duracaoMin": 75,
-    "preco": 75,
-    "profissionais": ["Rafa", "Diego"],
-    "disponivel": true,
-    "destaque": true
-  },
-  {
-    "servico": "Pezinho",
-    "categoria": "acabamento",
-    "duracaoMin": 15,
-    "preco": 15,
-    "profissionais": ["Rafa", "Diego", "Thiago"],
+    "busca": "barbear barboterapia",
+    "preco": null,
+    "profissionais": ["Lucas", "Jason"],
     "disponivel": true,
     "destaque": false
   },
   {
     "servico": "Sobrancelha",
     "categoria": "acabamento",
-    "duracaoMin": 15,
-    "preco": 15,
-    "profissionais": ["Diego", "Thiago"],
+    "preco": null,
+    "observacao": "Já vem inclusa em todos os planos do clube.",
+    "profissionais": ["Lucas", "Jason"],
     "disponivel": true,
     "destaque": false
   },
   {
-    "servico": "Pigmentação de barba",
-    "categoria": "barba",
-    "duracaoMin": 40,
-    "preco": 45,
-    "profissionais": ["Rafa"],
+    "servico": "Clube Corte Limitado",
+    "categoria": "assinatura",
+    "busca": "plano clube mensal mensalidade assinatura",
+    "preco": 100,
+    "unidade": "/mês",
+    "observacao": "Cortes de segunda a quinta. Inclui sobrancelha e 10% de desconto em produtos e serviços avulsos. Assinatura pelo link: https://app.galaxpay.com.br/maldonadosclub/clubebarbeariamaldonado",
+    "profissionais": ["Lucas", "Jason"],
     "disponivel": true,
     "destaque": false
   },
   {
-    "servico": "Luzes / platinado",
-    "categoria": "quimica",
-    "duracaoMin": 120,
-    "preco": 150,
-    "profissionais": ["Thiago"],
+    "servico": "Clube Corte Premium Ilimitado",
+    "categoria": "assinatura",
+    "busca": "plano clube mensal mensalidade assinatura",
+    "preco": 120,
+    "unidade": "/mês",
+    "observacao": "Cortes ilimitados. Inclui sobrancelha e 10% de desconto em produtos e serviços avulsos. Assinatura pelo link: https://app.galaxpay.com.br/maldonadosclub/clubebarbeariamaldonado",
+    "profissionais": ["Lucas", "Jason"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Clube Corte e Barba Ilimitado",
+    "categoria": "assinatura",
+    "busca": "plano clube mensal mensalidade assinatura",
+    "preco": 170,
+    "unidade": "/mês",
+    "observacao": "Corte e barba ilimitados. Inclui sobrancelha e 10% de desconto em produtos e serviços avulsos. Assinatura pelo link: https://app.galaxpay.com.br/maldonadosclub/clubebarbeariamaldonado",
+    "profissionais": ["Lucas", "Jason"],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Pomada Boy Black",
+    "categoria": "produto",
+    "busca": "pomada produto",
+    "preco": 25,
+    "profissionais": [],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Pomada Boy Efeito",
+    "categoria": "produto",
+    "busca": "pomada produto",
+    "preco": 25,
+    "profissionais": [],
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "servico": "Gel Boy Force Men",
+    "categoria": "produto",
+    "busca": "gel produto",
+    "preco": 25,
+    "profissionais": [],
     "disponivel": true,
     "destaque": false
   }

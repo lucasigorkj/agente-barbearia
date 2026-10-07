@@ -24,8 +24,16 @@ import catalogoRaw from "./data/catalogo.json";
 export interface Servico {
   servico: string;
   categoria: string;
-  duracaoMin: number;
-  preco: number;
+  /** Palavras que o cliente usa e nao estao no nome: "degrade", "plano", "kids"... */
+  busca?: string;
+  /** Opcional: sem duracao conhecida, o agente nao fala em tempo. */
+  duracaoMin?: number;
+  /** null = a casa nao divulga; o barbeiro passa o valor. Nunca inventar. */
+  preco: number | null;
+  /** Sufixo do preco. Ex: "/mês" nos planos do clube. */
+  unidade?: string;
+  /** O que o agente precisa saber alem do preco (o que inclui, link, restricao). */
+  observacao?: string;
   profissionais: string[];
   disponivel: boolean;
   destaque: boolean;
@@ -71,6 +79,8 @@ function camposDe(s: Servico): Campo[] {
   return [
     { valor: s.servico, peso: 6, pesoExato: 10, colado: true },
     { valor: s.categoria, peso: 5 },
+    // Mesmo peso da categoria: sinonimo sozinho passa, mas nao ganha do nome.
+    { valor: s.busca ?? "", peso: 5 },
     // pesoExato travado em 3: barbeiro com um servico so casaria "exato" (3+4)
     // e passaria do limiar sozinho, devolvendo um servico que ninguem pediu.
     { valor: s.profissionais.join(" "), peso: 3, pesoExato: 3 },
@@ -85,19 +95,35 @@ const LIMIAR = 5;
 function ficha(s: Servico) {
   return {
     servico: s.servico,
-    preco: moeda(s.preco),
-    duracao: duracao(s.duracaoMin),
-    barbeiros: s.profissionais.join(", "),
+    preco: precoTexto(s),
+    ...(s.duracaoMin ? { duracao: duracao(s.duracaoMin) } : {}),
+    ...(s.profissionais.length ? { barbeiros: s.profissionais.join(", ") } : {}),
+    ...(s.observacao ? { observacao: s.observacao } : {}),
   };
 }
 
 /** Nome + preco, sem detalhe. */
 function resumo(s: Servico) {
-  return { servico: s.servico, preco: moeda(s.preco) };
+  return {
+    servico: s.servico,
+    preco: precoTexto(s),
+    // Plano vem com a observacao (link de assinatura) ja na lista. Sem isso, nos
+    // testes o modelo inventou um link quando o cliente escolheu "o de 120".
+    ...(s.categoria === "assinatura" && s.observacao ? { observacao: s.observacao } : {}),
+  };
+}
+
+/** Preco ja escrito para o modelo -- inclusive quando a casa nao divulga. */
+function precoTexto(s: Servico): string {
+  if (s.preco === null) return "valor nao divulgado: diga que o barbeiro passa o valor";
+  return moeda(s.preco) + (s.unidade ?? "");
 }
 
 function porDestaque(a: Servico, b: Servico): number {
-  return Number(b.destaque) - Number(a.destaque) || a.preco - b.preco;
+  return (
+    Number(b.destaque) - Number(a.destaque) ||
+    (a.preco ?? Infinity) - (b.preco ?? Infinity)
+  );
 }
 
 function sugestoes(): string[] {
@@ -141,7 +167,7 @@ function buscarServico(args: Record<string, unknown>) {
     encontrado: true,
     ...ficha(melhor),
     instrucao:
-      "Passe o preco exatamente como veio. Se o cliente ainda nao disse o dia, pergunte que dia fica bom pra ele.",
+      "Passe o preco exatamente como veio. Use a observacao se houver (ex: mande o link do clube se ele quiser assinar). Se o cliente ainda nao disse o dia, pergunte que dia fica bom pra ele.",
   };
 }
 
@@ -151,15 +177,16 @@ function listarServicos(args: Record<string, unknown>) {
       ? args.categoria.trim().toLowerCase()
       : undefined;
 
-  const filtrados = SERVICOS.filter((s) => !categoria || s.categoria === categoria).sort(
-    porDestaque
-  );
+  // Sem filtro, "o que vcs fazem?" e pergunta de servico: produto fica de fora.
+  const filtrados = SERVICOS.filter((s) =>
+    categoria ? s.categoria === categoria : s.categoria !== "produto"
+  ).sort(porDestaque);
 
   if (filtrados.length === 0) {
     return {
       total: 0,
       servicos: [],
-      instrucao: "Nada nessa categoria. Diga isso e ofereca o corte ou o combo.",
+      instrucao: "Nada nessa categoria. Diga isso e ofereca o corte.",
       categorias: categoriasDisponiveis(),
     };
   }
@@ -174,7 +201,7 @@ function listarServicos(args: Record<string, unknown>) {
     servicos: amostra.map(resumo),
     instrucao:
       filtrados.length > 2
-        ? `Ha ${filtrados.length} servicos. Cite no maximo 2 e pergunte se ele quer so cabelo, so barba ou os dois. Nao liste todos.`
+        ? `Ha ${filtrados.length} itens. Cite no maximo 2 e faca UMA pergunta que estreite o que ele quer. Nao liste todos.`
         : "Pode citar os dois.",
   };
 }
@@ -214,9 +241,19 @@ function formatarParaHumano(lead: Lead, telefoneCliente: string): string {
   return linhas.join("\n");
 }
 
-/** O nome oficial da tabela: "corte e barba" vira "Combo corte e barba". */
+/**
+ * O nome oficial da tabela: "degrade" vira "Corte masculino (moderno ou clássico)".
+ *
+ * Plano so entra quando o cliente falou de plano: sem isso, "corte e barba" avulso
+ * casava com "Clube Corte e Barba Ilimitado" e o barbeiro recebia um pedido de
+ * assinatura que ninguem fez.
+ */
 function nomeOficial(falado: string): string {
-  const { melhor, empatados } = ranquear(SERVICOS, falado, camposDe, LIMIAR);
+  // Dois servicos juntos ("corte e barba") nao tem nome oficial: um so perderia o outro.
+  if (/\s(e|mais)\s|\+/i.test(falado) && !/clube|plano/i.test(falado)) return falado;
+  const falouDePlano = /clube|plano|assinatura|mensal/i.test(falado);
+  const base = falouDePlano ? SERVICOS : SERVICOS.filter((s) => s.categoria !== "assinatura");
+  const { melhor, empatados } = ranquear(base, falado, camposDe, LIMIAR);
   return melhor && empatados.length === 1 ? melhor.servico : falado;
 }
 
@@ -308,13 +345,13 @@ export const declaracoes: FunctionDeclaration[] = [
   {
     name: "buscarServico",
     description:
-      "Busca um servico da barbearia pelo nome ou tipo (corte, degrade, barba, sobrancelha...). Use sempre que o cliente citar um servico ou perguntar preco. Unica fonte de preco valida.",
+      "Busca um servico, plano do clube ou produto da barbearia pelo nome ou tipo (corte, degrade, barba, plano, pomada...). Use sempre que o cliente citar um servico ou perguntar preco. Unica fonte de preco valida.",
     parametersJsonSchema: {
       type: "object",
       properties: {
         termo: {
           type: "string",
-          description: "O que o cliente falou. Ex: 'degrade', 'barba', 'corte e barba', 'platinado'.",
+          description: "O que o cliente falou. Ex: 'degrade', 'barba', 'afro', 'plano mensal', 'pomada'.",
         },
       },
       required: ["termo"],
