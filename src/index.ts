@@ -248,7 +248,15 @@ if (!config.webhookSecret) {
   );
 }
 
-setInterval(limparSessoesOciosas, 15 * 60 * 1000).unref();
+// Na Railway sem Volume, o disco some a cada deploy -- e a pausa junto.
+if (process.env.RAILWAY_ENVIRONMENT && !process.env.RAILWAY_VOLUME_MOUNT_PATH && !process.env.PASTA_DADOS) {
+  console.warn(
+    "[boot] ATENCAO: sem Volume na Railway -- a pausa (humano assumiu) se perde a cada deploy. " +
+      "Anexe um Volume ao servico."
+  );
+}
+
+setInterval(limparSessoesOciosas,15 * 60 * 1000).unref();
 setInterval(limparPausasVencidas, 15 * 60 * 1000).unref();
 
 app.listen(config.porta, () => {

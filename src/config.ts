@@ -123,6 +123,13 @@ export const config = {
    * este tempo. E o sinal mais confiavel de "humano assumiu".
    */
   pausaHumanoMin: num("PAUSA_HUMANO_MIN", 60),
+  /**
+   * Onde a pausa e salva em disco, para sobreviver a reinicio e deploy.
+   * Na Railway, basta anexar um Volume ao servico: ela preenche
+   * RAILWAY_VOLUME_MOUNT_PATH sozinha. Sem volume, o disco do container e
+   * apagado a cada deploy -- o boot avisa.
+   */
+  pastaDados: opt("PASTA_DADOS", process.env.RAILWAY_VOLUME_MOUNT_PATH || "./dados"),
 
   // --- comportamento de conversa ---
   /** Janela de agrupamento: junta mensagens picadas antes de responder uma vez. */
