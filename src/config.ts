@@ -61,6 +61,18 @@ export const config = {
   // O Google aposenta model id (gemini-2.0-flash foi desligado em 01/06/2026).
   // `npm run check` avisa antes de o cliente descobrir com um 404.
   geminiModel: opt("GEMINI_MODEL", "gemini-3.5-flash-lite"),
+  /**
+   * Usados, em ordem, quando o principal responde 503/429/500 mesmo depois de
+   * tentar de novo. Separados por virgula. Modelo e cota separados: o pico de
+   * demanda num nao derruba o outro.
+   *
+   * CICATRIZ: gemini-2.5-flash aparece no models.list mas responde 404 para conta
+   * nova. Rode `npm run check` depois de trocar.
+   */
+  geminiModelsReserva: opt("GEMINI_MODEL_RESERVA", "gemini-3.1-flash-lite,gemini-3.5-flash")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean),
   /** Criatividade da redacao. Abaixo de 0.5 o agente fica respondendo igual. */
   temperatura: num("TEMPERATURA", 0.7),
   /** Teto fisico de verborragia. O prompt pede 2 frases; isto garante. */

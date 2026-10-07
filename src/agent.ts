@@ -1,11 +1,18 @@
-import { GoogleGenAI, type Content } from "@google/genai";
+import {
+  GoogleGenAI,
+  type Content,
+  type GenerateContentParameters,
+  type GenerateContentResponse,
+} from "@google/genai";
 import { config } from "./config";
 import { buildSystemPrompt } from "./prompt";
 import { declaracoes } from "./tools";
 import { esquecerLead } from "./catalogo";
 import { executarTool } from "./tool-runner";
 
-const ai = new GoogleGenAI({ apiKey: config.geminiApiKey });
+// Sem timeout o SDK espera o Google para sempre: em pico de demanda uma chamada
+// travou ~2 min. Estourou, conta como transitorio e passa para o proximo modelo.
+const ai = new GoogleGenAI({ apiKey: config.geminiApiKey, httpOptions: { timeout: 15_000 } });
 
 // ---------------------------------------------------------------------------
 // Historico em memoria
@@ -113,6 +120,65 @@ export function desfazerTurno(chatid: string, marcador: number): void {
 }
 
 // ---------------------------------------------------------------------------
+// Chamada ao Gemini com retry + modelo reserva
+// ---------------------------------------------------------------------------
+
+/** 503 (modelo sobrecarregado), 429 (cota), 500 e timeout: costumam passar em segundos. */
+function transitorio(e: unknown): boolean {
+  if ((e as { name?: unknown })?.name === "AbortError") return true;
+  const status = (e as { status?: unknown })?.status;
+  return status === 503 || status === 429 || status === 500;
+}
+
+function motivo(e: unknown): string {
+  return (e as { name?: unknown })?.name === "AbortError"
+    ? "timeout"
+    : String((e as { status?: unknown })?.status);
+}
+
+/** Modelo que esgotou as tentativas fica de lado ate este instante. */
+const foraAte = new Map<string, number>();
+const ESFRIAR_MS = 60_000;
+
+/**
+ * CICATRIZ: "This model is currently experiencing high demand" (503) chegou em
+ * producao e o cliente ficou sem resposta nenhuma. Tenta de novo no mesmo modelo
+ * e, se o pico continuar, cai para os reservas.
+ *
+ * Um turno com tool chama o Gemini 2-3 vezes: sem o "esfriar", cada chamada
+ * voltaria a esperar o principal falhar de novo.
+ */
+async function gerar(
+  params: Omit<GenerateContentParameters, "model">
+): Promise<GenerateContentResponse> {
+  const todos = [...new Set([config.geminiModel, ...config.geminiModelsReserva])];
+  const agora = Date.now();
+  const disponiveis = todos.filter((m) => (foraAte.get(m) ?? 0) <= agora);
+  // Todos esfriando: tenta todos assim mesmo, melhor que nao responder.
+  const modelos = disponiveis.length ? disponiveis : todos;
+  let ultimoErro: unknown;
+
+  for (const model of modelos) {
+    // So o principal ganha segunda chance: o reserva ja e a segunda chance.
+    const esperas = model === config.geminiModel ? [0, 2_500] : [0];
+    for (const espera of esperas) {
+      if (espera) await new Promise((r) => setTimeout(r, espera));
+      try {
+        const resposta = await ai.models.generateContent({ ...params, model });
+        foraAte.delete(model);
+        return resposta;
+      } catch (e) {
+        if (!transitorio(e)) throw e;
+        ultimoErro = e;
+        console.warn(`[agent] ${model} indisponivel (${motivo(e)})`);
+      }
+    }
+    foraAte.set(model, Date.now() + ESFRIAR_MS);
+  }
+  throw ultimoErro;
+}
+
+// ---------------------------------------------------------------------------
 // Loop de conversa
 // ---------------------------------------------------------------------------
 
@@ -140,8 +206,7 @@ export async function responder(
   sessao.historico.push({ role: "user", parts: [{ text: entrada }] });
 
   for (let i = 0; i < config.maxToolIteracoes; i++) {
-    const resposta = await ai.models.generateContent({
-      model: config.geminiModel,
+    const resposta = await gerar({
       contents: sessao.historico,
       config: {
         systemInstruction,
