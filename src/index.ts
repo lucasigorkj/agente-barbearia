@@ -7,8 +7,9 @@ import {
   marcarHistorico,
   responder,
   totalSessoes,
+  transcreverAudio,
 } from "./agent";
-import { ficarOnline, responderComoHumano } from "./whatsapp";
+import { baixarAudio, ficarOnline, responderComoHumano } from "./whatsapp";
 import { estaPausado, limparPausasVencidas, pausar } from "./pausa";
 
 const app = express();
@@ -23,6 +24,10 @@ interface UazapiMessage {
   isGroup?: boolean;
   wasSentByApi?: boolean;
   type?: string;
+  /** Ex: "AudioMessage". Junto com mediaType, e o que identifica audio. */
+  messageType?: string;
+  /** Ex: "ptt" (audio de voz), "audio" (arquivo de audio). */
+  mediaType?: string;
   text?: string;
   /**
    * Telefone do outro lado da conversa, nos dois sentidos -- e o alvo da resposta.
@@ -181,6 +186,42 @@ function segredoConfere(recebido: unknown): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+// ---------------------------------------------------------------------------
+// Audio: baixa na UAZAPI, transcreve no Gemini e entra no agrupamento como texto
+// ---------------------------------------------------------------------------
+
+/** O que o agente recebe quando o audio nao deu para transcrever. O prompt sabe lidar. */
+const AUDIO_INAUDIVEL = "[o cliente mandou um áudio que não deu para ouvir]";
+
+/**
+ * Audio de voz chega como messageType "AudioMessage" e mediaType "ptt"; audio
+ * encaminhado, como "audio". Olha os tres campos para nao depender de um so.
+ */
+function ehAudio(msg: UazapiMessage): boolean {
+  return [msg.messageType, msg.mediaType, msg.type]
+    .map((t) => (t ?? "").toLowerCase())
+    .some((t) => t.includes("audio") || t === "ptt");
+}
+
+async function receberAudio(chatid: string, msg: UazapiMessage): Promise<void> {
+  const id = msg.messageid;
+  let texto = AUDIO_INAUDIVEL;
+  try {
+    if (!id) throw new Error("audio sem messageid");
+    const { base64, mimetype } = await baixarAudio(id);
+    const transcricao = await transcreverAudio(base64, mimetype);
+    if (transcricao) texto = `[áudio] ${transcricao}`;
+  } catch (e) {
+    // Nunca fica mudo: o agente pede para mandar de novo ou escrever.
+    console.error(`[audio] ${chatid}: falha ao transcrever:`, e instanceof Error ? e.message : e);
+  }
+
+  // Um humano pode ter assumido enquanto transcreviamos.
+  if (estaPausado(chatid)) return;
+  console.log(`[audio] ${chatid}: ${texto}`);
+  agendar(chatid, texto, id, msg.senderName);
+}
+
 app.post("/webhook", (req, res) => {
   if (!segredoConfere(req.query.secret)) {
     res.sendStatus(401);
@@ -216,7 +257,20 @@ app.post("/webhook", (req, res) => {
       return;
     }
 
-    if (msg.type !== "text") return; // audio, imagem, sticker...
+    if (ehAudio(msg)) {
+      if (estaPausado(chatid)) {
+        console.log(`[webhook] ${chatid}: audio ignorado, conversa com humano`);
+        return;
+      }
+      void receberAudio(chatid, msg);
+      return;
+    }
+
+    if (msg.type !== "text") {
+      // imagem, sticker... Loga o tipo: e assim que se descobre o formato real do payload.
+      console.log(`[webhook] ${chatid}: ignorado, tipo ${msg.type}/${msg.messageType}/${msg.mediaType}`);
+      return;
+    }
 
     const texto = msg.text?.trim();
     if (!texto) return;

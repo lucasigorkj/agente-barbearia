@@ -179,6 +179,36 @@ async function gerar(
 }
 
 // ---------------------------------------------------------------------------
+// Audio
+// ---------------------------------------------------------------------------
+
+/**
+ * Transcreve um audio do cliente. Brasileiro manda audio no WhatsApp o tempo
+ * todo: agente que ignora audio fica mudo justo na frente do dono.
+ * Mesmo `gerar` da conversa, entao herda retry e modelos reserva.
+ * Devolve "" quando nao ha fala (barulho, audio vazio).
+ */
+export async function transcreverAudio(base64: string, mimetype: string): Promise<string> {
+  const resposta = await gerar({
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { inlineData: { data: base64, mimeType: mimetype } },
+          {
+            text:
+              "Transcreva este audio de WhatsApp em portugues do Brasil, exatamente o que a pessoa falou. " +
+              "Responda SO com a transcricao, sem comentario. Se nao houver fala, responda vazio.",
+          },
+        ],
+      },
+    ],
+    config: { temperature: 0 },
+  });
+  return (resposta.text ?? "").trim();
+}
+
+// ---------------------------------------------------------------------------
 // Loop de conversa
 // ---------------------------------------------------------------------------
 

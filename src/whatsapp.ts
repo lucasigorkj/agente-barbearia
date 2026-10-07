@@ -100,6 +100,27 @@ function tempoDigitando(texto: string): number {
 // Envio
 // ---------------------------------------------------------------------------
 
+/**
+ * Baixa o audio de uma mensagem recebida, em base64.
+ *   POST /message/download { id, return_base64, generate_mp3 }
+ * MP3 em vez do OGG/opus original: formato que o Gemini aceita sem conversao.
+ * Propaga erro: quem chama decide o que dizer ao cliente.
+ */
+export async function baixarAudio(messageid: string): Promise<{ base64: string; mimetype: string }> {
+  const res = await post(
+    "/message/download",
+    { id: messageid, return_base64: true, generate_mp3: true, return_link: false },
+    30_000
+  );
+  if (!res.ok) {
+    const corpo = await res.text().catch(() => "");
+    throw new Error(`UAZAPI download ${res.status}: ${corpo.slice(0, 300)}`);
+  }
+  const j = (await res.json()) as { base64Data?: string; mimetype?: string };
+  if (!j.base64Data) throw new Error("UAZAPI download sem base64Data");
+  return { base64: j.base64Data, mimetype: j.mimetype || "audio/mpeg" };
+}
+
 /** Envio cru, sem humanizacao. Propaga erro de proposito. */
 export async function enviarTexto(chatid: string, texto: string): Promise<void> {
   const numero = soDigitos(chatid);
